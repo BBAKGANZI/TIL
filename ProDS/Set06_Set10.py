@@ -260,7 +260,7 @@ x_list = data7.columns.drop(['Serial_No', 'Chance_of_Admit'])
 logit = LogisticRegression(fit_intercept=False, 
                            random_state=12, 
                            solver = 'liblinear')
-logit.fit(q3[x_list], q3['Ch_cd'])
+# logit.fit(q3[x_list], q3['Ch_cd'])
 
 abs(logit.coef_).max()
 
@@ -496,6 +496,17 @@ q3_out.abs().nlargest(1)
 
 #%%
 
+import pandas as pd
+import numpy as np
+
+data10 = pd.read_csv('Dataset_10.csv')
+data10.info()
+data10.columns
+# ['model', 'engine_power', 'age_in_days', 'km', 'previous_owners',
+#       'price']
+
+data10 = data10.dropna(axis=1, how='all')
+
 # =============================================================================
 # 1.이전 소유자 수가 한 명이고 엔진 파워가 51인 차에 대해 모델별 하루 평균 운행
 # 거리를 산출하였을 때 가장 낮은 값을 가진 모델이 가장 큰 값을 가진 모델에 대한
@@ -504,13 +515,17 @@ q3_out.abs().nlargest(1)
 # (모델별 평균 → 일평균 → 최대최소 비율 계산) (답안 예시) 0.12
 # =============================================================================
 
+q1 = data10[data10['previous_owners'] == 1]
+q1 = q1[q1['engine_power'] == 51]
 
+q1_tab = pd.pivot_table(q1, index='model',
+                        values = ['age_in_days', 'km'])
 
+q1_tab['km_day'] = q1_tab['km']/q1_tab['age_in_days']
 
+q1_tab['km_day'].min()/q1_tab['km_day'].max()
 
-
-
-
+# 답: 0.9688580804724013 -> 0.97
 
 
 
@@ -527,14 +542,29 @@ q3_out.abs().nlargest(1)
 # (답안 예시) 0.23, Y
 # =============================================================================
 
+min_group = q1_tab['km_day'].idxmin()
+max_group = q1_tab['km_day'].idxmax()
 
 
+q2 = data10.copy()
+# (1) 일 운행거리 변수 생성 (원데이터 사용)
 
+q2['km_per_day'] = q2['km']/q2['age_in_days']
 
+# (2) 2개 그룹 필터
 
+max_km = q2[q2.model == max_group]['km_per_day']
+min_km = q2[q2.model == min_group]['km_per_day']
 
+# (3) 집단가의 평균 차이 검정
 
+from scipy.stats import ttest_ind
 
+q2_out = ttest_ind(max_km, min_km, equal_var=True)
+
+q2_out.pvalue
+
+# 답: 0.13248244438755083 -> 0.13, N
 
 #%%
 
@@ -546,22 +576,25 @@ q3_out.abs().nlargest(1)
 
 # (답안 예시) 12345
 # =============================================================================
+# model = pop이고 이전 소유자수가 2명인 데이터만을 이용하여 회귀모델을 생성하시오.
 
+x_list = ['engine_power', 'age_in_days', 'km']
 
+q3 = data10[data10.model == 'pop']
+q3 = q3[q3.previous_owners == 2]
 
+from sklearn.linear_model import LinearRegression
 
+lm = LinearRegression().fit(q3[x_list], q3.price)
 
+# q3_out = lm.predict([[51, 400, 9500]])
 
+new_data = {'engine_power' : [51],
+            'age_in_days' : [400],
+            'km' : [9500]}
 
+q3_out = lm.predict(pd.DataFrame(new_data))
+# 10367.53433763
 
-
-
-
-
-
-
-
-
-
-
+# 답: 10367.53433763 -> 10367
 
