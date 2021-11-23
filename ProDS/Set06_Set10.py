@@ -246,10 +246,29 @@ q2_out.statistic # 19.443291692470982
 # (답안 예시) abc, 0.12
 # =============================================================================
 
+q3 = data7.copy()
+
+# 확률이 0.5를 초과하면 합격, 이하면 불합격으로 구분
+q3['Ch_cd'] = np.where(q3.Chance_of_Admit > 0.5, 1, 0)
+
+from sklearn.linear_model import LogisticRegression
+
+# 원데이터에서 Serial_No와 Label 제거
+x_list = data7.columns.drop(['Serial_No', 'Chance_of_Admit'])
 
 
+logit = LogisticRegression(fit_intercept=False, 
+                           random_state=12, 
+                           solver = 'liblinear')
+logit.fit(q3[x_list], q3['Ch_cd'])
 
+abs(logit.coef_).max()
 
+q3_out = pd.Series(logit.coef_.reshape(-1))
+q3_out.index = x_list
+q3_out.abs().nlargest(1)
+
+# 답: CGPA    1.955355 -> CGPA, 1.96
 
 
 #%%
