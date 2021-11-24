@@ -39,9 +39,12 @@ data1.info()
 # 1. 데이터 세트 내에 총 결측값의 개수는 몇 개인가? (답안 예시) 23
 # =============================================================================
 
-data1.isnull().sum().sum() # 결측치가 포함된 셀의 수 
+data1.isnull().sum() # 카테고리별 결측치 수
+data1.isnull().sum().sum() # 결측치가 포함된 셀의 총합 
 
-(data1.isnull().sum(axis=1)>=1).sum() # 행방향으로 결측치 수 확인가능
+data1.isnull().sum().sum()
+data1.isnull().sum(axis=1).sum()
+(data1.isnull().sum(axis=1)>=1).sum() # 결측치가 포함된 행의 총합
 
 # 답: 26
 
@@ -62,7 +65,7 @@ data1.columns
 # ['TV', 'Radio', 'Social_Media', 'Influencer', 'Sales']
 var_list = ['TV', 'Radio', 'Social_Media', 'Sales']
 # var_list = data1.columns.drop('Influencer')
-
+data1.corr()
 q2 = data1[var_list].corr().abs().drop('Sales')['Sales']
 
 q2.max() # 0.999497444941335, 최대
