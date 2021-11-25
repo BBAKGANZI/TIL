@@ -162,11 +162,14 @@ xx2 = add_constant(xx)
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+
 data2 = pd.read_csv('Dataset_02.csv')
 data2.info()
 data2.isnull().sum()
 data2.columns
 # ['Age', 'Sex', 'BP', 'Cholesterol', 'Na_to_K', 'Drug']
+data2
 
 #%%
 
@@ -175,6 +178,7 @@ data2.columns
 # 환자의 전체에 대비한 비율이 얼마인지 소수점 네 번째 자리에서 반올림하여 소수점 셋째
 # 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
+
 
 q1 = pd.crosstab(index=[data2.Sex, data2.BP], 
                  columns=[data2.Cholesterol],
@@ -204,28 +208,75 @@ data2[['Sex', 'BP', 'Cholesterol']].value_counts(normalize=True)
 # (답안 예시) 3, 1.23456
 # =============================================================================
 
+import numpy as np
+
 # (1) 변수 변환
 
+q2 = data2.copy()
+
+# np.where(조건) -> 조건에 해당하는위치 번호 리턴
+# np.where(조건, 참인경우 실행문, 거짓인 경우 실행문)
+
+q2['Age_gr'] = np.where(q2.Age < 20, '10',
+                        np.where(q2.Age < 30, '20',
+                                 np.where(q2.Age < 40, '30',
+                                          np.where(q2.Age < 50, '40',
+                                                   np.where(q2.Age < 60, '50', '60')))))
+
+q2['Na_K_gr'] = np.where(q2.Na_to_K <= 10, 'Lv1',
+                         np.where(q2.Na_to_K <= 20, 'Lv2',
+                                  np.where(q2.Na_to_K <= 30, 'Lv3', 'Lv4')))
 
 
-# (2) 빈포도 작성 - 입력값
+# (2) 빈도표 작성 - 입력값
+# Sex, BP, Cholesterol, Age_gr, Na_K_gr이 Drug변수와 영향
 
-
+temp = pd. crosstab(index = q2['Sex'],
+                    columns = q2['Drug'])
+temp
 
 # (3) 카이스퀘어 검정
+# H0: 두개의 변수는 독립이다.
+# H1: 두개의 변수는 독립이 아니다.
 
+from scipy.stats import chi2_contingency
 
+chi2 = chi2_contingency(temp)
+chi2
+
+# (2.119248418109203 -> chi2 통계량
+# 0.7138369773987128 -> p-value, 결론: 독립이다.
+# 4 -> 자유도, (r-1)(c-1)
+# array([[43.68, 11.04,  7.68,  7.68, 25.92],
+#        [47.32, 11.96,  8.32,  8.32, 28.08]])) -> 독립인 경우 기대빈도
+
+p_value = chi2[1]
+# 0.7138369773987128
 
 # (4) 반복적으로 (2) ~ (3) 수행
 
+x_list = ['Sex', 'BP', 'Cholesterol', 'Age_gr', 'Na_K_gr']
 
+q2_out=[]
+
+for i in x_list:
+    temp = pd.crosstab(index = q2[i], columns = q2['Drug'])
+    chi2 = chi2_contingency(temp)
+    p_value = chi2[1]
+    q2_out.append([i, chi2[0], chi2[1]])
+    
+q2_out = pd.DataFrame(q2_out, columns = ['x', 'chi2', 'p_value'])
+print(q2_out)
+
+len(q2_out[q2_out.p_value < 0.05])
+# 4
 
 # (5) Drug와 연관성 있는 변수 추출 후 그 중 가장 높은 p-value
 
+q2_out[q2_out.p_value < 0.05]['p_value'].max()
 
-
-
-
+# 0.0007010113024729462
+# 답: 4, 0.0007
 
 
 #%%
